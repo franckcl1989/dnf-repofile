@@ -38,7 +38,14 @@ fn test_parse_error_missing_equals_display() {
 #[test]
 fn test_parse_error_empty_section_display() {
     let err = ParseError::EmptySectionName;
-    assert!(!err.to_string().is_empty());
+    assert!(err.to_string().contains("empty"));
+}
+
+#[test]
+fn test_parse_error_io_display() {
+    let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
+    let err = ParseError::Io(io_err);
+    assert!(err.to_string().contains("file not found"));
 }
 
 #[test]
@@ -98,6 +105,13 @@ fn test_from_parse_bool_error_to_error() {
     let bool_err = ParseBoolError { input: "invalid".into() };
     let err: Error = bool_err.into();
     assert!(matches!(err, Error::ParseBool(_)));
+}
+
+#[test]
+fn test_from_string_to_error() {
+    let err: Error = String::from("boom").into();
+    assert!(matches!(err, Error::Other(_)));
+    assert!(err.to_string().contains("boom"));
 }
 
 #[test]
