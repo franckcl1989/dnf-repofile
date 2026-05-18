@@ -1090,6 +1090,55 @@ impl RepoFile {
     pub fn remove_main(&mut self) {
         self.main = None;
     }
+
+    /// Merge another RepoFile into this one.
+    /// [main]: other's Some fields overwrite self's None fields.
+    /// repos: duplicate IDs are overwritten by other, non-duplicates are appended.
+    pub fn merge(&mut self, other: RepoFile) {
+        if let Some(other_main) = other.main {
+            if let Some(ref mut self_main) = self.main {
+                merge_mainconfig(&mut self_main.data, &other_main.data);
+                for (k, v) in other_main.item_comments {
+                    self_main.item_comments.entry(k).or_insert(v);
+                }
+            } else {
+                self.main = Some(other_main);
+            }
+        }
+        for (id, block) in other.repos {
+            self.repos.insert(id, block);
+        }
+    }
+}
+
+fn merge_mainconfig(dest: &mut MainConfig, src: &MainConfig) {
+    macro_rules! merge_opt {
+        ($field:ident) => { if src.$field.is_some() && dest.$field.is_none() { dest.$field = src.$field.clone(); } };
+    }
+    merge_opt!(arch); merge_opt!(basearch); merge_opt!(releasever);
+    merge_opt!(cachedir); merge_opt!(persistdir); merge_opt!(logdir);
+    merge_opt!(config_file_path); merge_opt!(installroot);
+    merge_opt!(debuglevel); merge_opt!(logfilelevel);
+    merge_opt!(log_rotate); merge_opt!(log_size);
+    merge_opt!(installonly_limit); merge_opt!(errorlevel);
+    merge_opt!(metadata_timer_sync);
+    merge_opt!(allow_vendor_change); merge_opt!(assumeyes); merge_opt!(assumeno);
+    merge_opt!(autocheck_running_kernel); merge_opt!(best); merge_opt!(cacheonly);
+    merge_opt!(check_config_file_age); merge_opt!(clean_requirements_on_remove);
+    merge_opt!(debug_solver); merge_opt!(defaultyes); merge_opt!(diskspacecheck);
+    merge_opt!(exclude_from_weak_autodetect); merge_opt!(exit_on_lock);
+    merge_opt!(gpgkey_dns_verification); merge_opt!(ignorearch);
+    merge_opt!(install_weak_deps); merge_opt!(keepcache); merge_opt!(log_compress);
+    merge_opt!(module_obsoletes); merge_opt!(module_stream_switch);
+    merge_opt!(obsoletes); merge_opt!(plugins); merge_opt!(protect_running_kernel);
+    merge_opt!(strict); merge_opt!(upgrade_group_objects_upgrade); merge_opt!(zchunk);
+    merge_opt!(multilib_policy); merge_opt!(persistence);
+    merge_opt!(rpmverbosity); merge_opt!(module_platform_id);
+    for (k, v) in &src.extras {
+        if !dest.extras.contains_key(k) {
+            dest.extras.insert(k.clone(), v.clone());
+        }
+    }
 }
 
 impl Default for RepoFile {
