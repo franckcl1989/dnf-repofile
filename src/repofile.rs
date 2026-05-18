@@ -1,3 +1,22 @@
+//! Parsing, rendering, and manipulation of `.repo` files.
+//!
+//! The central type is [`RepoFile`], which represents a complete INI-style
+//! `.repo` file as a structured document: a preamble (comments/blank lines
+//! before any section), an optional `[main]` section ([`SectionBlock<MainConfig>`]),
+//! and a collection of `[repo-id]` sections ([`SectionBlock<Repo>`]).
+//!
+//! # Round-trip fidelity
+//!
+//! [`RepoFile`] preserves comments, blank lines, whitespace, and entry ordering
+//! via [`RawEntry`] records. Parsing and re-rendering produces text that is
+//! semantically (and typically textually) identical to the original.
+//!
+//! # Key types
+//!
+//! - [`SectionBlock<T>`] — wraps typed data with formatting metadata
+//! - [`RawEntry`] — a single key-value pair with associated comments
+//! - [`RepoFile`] — the top-level document type
+
 use crate::error::ParseError;
 use crate::mainconfig::MainConfig;
 use crate::repo::Repo;
@@ -139,30 +158,83 @@ const KNOWN_MAIN_KEYS: &[&str] = &[
 // Core public types
 // ============================================================================
 
-/// A section block: typed data + formatting metadata
+/// A section block containing typed data plus formatting metadata.
+///
+/// Wraps a typed value (either [`Repo`] or [`MainConfig`]) together with
+/// comments, entry ordering, and raw entry records to support round-trip
+/// rendering.
+///
+/// # Examples
+///
+/// ```
+/// use dnf_repofile::{SectionBlock, Repo, RepoId};
+///
+/// let block = SectionBlock {
+///     header_comments: vec![],
+///     data: Repo::new(RepoId::try_new("test").unwrap()),
+///     item_comments: indexmap::IndexMap::new(),
+///     item_order: vec![],
+///     raw_entries: vec![],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SectionBlock<T> {
+    /// Comment lines and blank lines preceding the section header.
     pub header_comments: Vec<String>,
+    /// The typed section data ([`Repo`] or [`MainConfig`]).
     pub data: T,
+    /// Inline comments for specific keys: `key -> comment text`.
     pub item_comments: IndexMap<String, String>,
+    /// Ordered list of key names as they appeared in the original file.
     pub item_order: Vec<String>,
+    /// Raw key-value entries preserving comments and ordering.
     pub raw_entries: Vec<RawEntry>,
 }
 
-/// An unrecognized key-value entry
+/// An unrecognized key-value entry preserved for round-trip fidelity.
+///
+/// Stores the key, value, optional inline comment, and any leading comments
+/// that appeared before the entry in the original `.repo` file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawEntry {
+    /// The option key name.
     pub key: String,
+    /// The option value.
     pub value: String,
+    /// Optional inline comment after the value (text after `#`).
     pub inline_comment: Option<String>,
+    /// Comment lines immediately preceding this entry.
     pub leading_comments: Vec<String>,
 }
 
-/// A complete parsed .repo file
+/// A complete parsed `.repo` file.
+///
+/// Represents the entire INI document structure: a preamble (comments/lines
+/// before the first section), an optional `[main]` section, and zero or more
+/// `[repo-id]` repository sections.
+///
+/// # Examples
+///
+/// ```
+/// use dnf_repofile::RepoFile;
+///
+/// let input = "[main]\ncachedir=/var/cache/dnf\n\n[epel]\nname=EPEL\nbaseurl=https://example.com/\nenabled=1\n";
+/// let rf = RepoFile::parse(input).unwrap();
+/// assert_eq!(rf.len(), 1);
+/// assert!(rf.main().is_some());
+///
+/// // Render back to string
+/// let output = rf.render();
+/// assert!(output.contains("[epel]"));
+/// assert!(output.contains("[main]"));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RepoFile {
+    /// Lines appearing before the first section header (preamble comments/blanks).
     pub preamble: Vec<String>,
+    /// The optional `[main]` configuration section.
     pub main: Option<SectionBlock<MainConfig>>,
+    /// Repository sections keyed by [`RepoId`].
     pub repos: IndexMap<RepoId, SectionBlock<Repo>>,
 }
 
@@ -958,7 +1030,17 @@ fn build_repofile(state: ParseState) -> std::result::Result<RepoFile, ParseError
 // ============================================================================
 
 impl RepoFile {
-    /// Create an empty RepoFile.
+    /// Create an empty [`RepoFile`] with no sections.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let rf = RepoFile::new();
+    /// assert!(rf.is_empty());
+    /// assert!(rf.main().is_none());
+    /// ```
     pub fn new() -> Self {
         RepoFile {
             preamble: Vec::new(),
@@ -967,7 +1049,27 @@ impl RepoFile {
         }
     }
 
-    /// Parse a .repo file string.
+    /// Parse a `.repo` file string into a [`RepoFile`].
+    ///
+    /// Handles INI syntax with `[section]` headers, `key=value` pairs,
+    /// `#` and `;` comment lines, inline comments, and blank lines.
+    /// The `[main]` section is parsed into a [`MainConfig`], while
+    /// other sections become [`Repo`] values.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParseError`] for malformed input: invalid section headers,
+    /// missing `=` separators, empty section names, or invalid repo IDs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let input = "[test]\nname=Test\nbaseurl=https://example.com/\n";
+    /// let rf = RepoFile::parse(input).unwrap();
+    /// assert_eq!(rf.len(), 1);
+    /// ```
     pub fn parse(input: &str) -> std::result::Result<Self, ParseError> {
         let mut state = ParseState {
             preamble: Vec::new(),
@@ -1084,7 +1186,23 @@ impl RepoFile {
         build_repofile(state)
     }
 
-    /// Render the RepoFile back to INI text.
+    /// Render the [`RepoFile`] back to INI text.
+    ///
+    /// Preserves comments, blank lines, and entry ordering from the original
+    /// parse. Entries are rendered in their original order via the `raw_entries`
+    /// recorded during parsing.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let input = "[test]\nname=Test\nbaseurl=https://example.com/\n";
+    /// let rf = RepoFile::parse(input).unwrap();
+    /// let output = rf.render();
+    /// assert!(output.contains("[test]"));
+    /// assert!(output.contains("name=Test"));
+    /// ```
     #[must_use]
     pub fn render(&self) -> String {
         let mut out = String::new();
@@ -1110,14 +1228,59 @@ impl RepoFile {
 
     // ---- Accessors ----
 
+    /// Get a reference to a repository section by [`RepoId`].
+    ///
+    /// Returns `None` if no repo with this ID exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, RepoId};
+    ///
+    /// let rf = RepoFile::parse("[epel]\nname=EPEL\nbaseurl=https://example.com/\n").unwrap();
+    /// let block = rf.get(&RepoId::try_new("epel").unwrap()).unwrap();
+    /// assert_eq!(block.data.name.as_ref().unwrap().as_ref(), "EPEL");
+    /// ```
     pub fn get(&self, id: &RepoId) -> Option<&SectionBlock<Repo>> {
         self.repos.get(id)
     }
 
+    /// Get a mutable reference to a repository section by [`RepoId`].
+    ///
+    /// Returns `None` if no repo with this ID exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, RepoId, DnfBool};
+    ///
+    /// let mut rf = RepoFile::parse("[epel]\nname=EPEL\nbaseurl=https://example.com/\n").unwrap();
+    /// let block = rf.get_mut(&RepoId::try_new("epel").unwrap()).unwrap();
+    /// block.data.enabled = Some(DnfBool::False);
+    /// ```
     pub fn get_mut(&mut self, id: &RepoId) -> Option<&mut SectionBlock<Repo>> {
         self.repos.get_mut(id)
     }
 
+    /// Add a repository to the file.
+    ///
+    /// The repo's ID is used as the section name.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AddRepoError`](crate::error::AddRepoError) if a repo with the same
+    /// ID already exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// let repo = Repo::new(RepoId::try_new("custom").unwrap());
+    /// rf.add(repo).unwrap();
+    /// assert_eq!(rf.len(), 1);
+    /// ```
     pub fn add(&mut self, repo: Repo) -> std::result::Result<(), crate::error::AddRepoError> {
         let id = repo.id.clone();
         if self.repos.contains_key(&id) {
@@ -1136,6 +1299,20 @@ impl RepoFile {
         Ok(())
     }
 
+    /// Insert or replace a repository by ID.
+    ///
+    /// Unlike [`add`](RepoFile::add), this will overwrite any existing repo
+    /// with the same ID.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("test").unwrap()));
+    /// assert_eq!(rf.len(), 1);
+    /// ```
     pub fn set(&mut self, repo: Repo) {
         let id = repo.id.clone();
         self.repos.insert(
@@ -1150,43 +1327,159 @@ impl RepoFile {
         );
     }
 
+    /// Remove a repository by [`RepoId`] and return its section, if present.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("test").unwrap()));
+    /// let removed = rf.remove(&RepoId::try_new("test").unwrap());
+    /// assert!(removed.is_some());
+    /// assert!(rf.is_empty());
+    /// ```
     pub fn remove(&mut self, id: &RepoId) -> Option<SectionBlock<Repo>> {
         self.repos.shift_remove(id)
     }
 
+    /// Check if a repository with the given [`RepoId`] exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("test").unwrap()));
+    /// assert!(rf.contains(&RepoId::try_new("test").unwrap()));
+    /// ```
     pub fn contains(&self, id: &RepoId) -> bool {
         self.repos.contains_key(id)
     }
 
+    /// Return the number of repository sections.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("a").unwrap()));
+    /// rf.set(Repo::new(RepoId::try_new("b").unwrap()));
+    /// assert_eq!(rf.len(), 2);
+    /// ```
     pub fn len(&self) -> usize {
         self.repos.len()
     }
 
+    /// Returns `true` if there are no repository sections.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let rf = RepoFile::new();
+    /// assert!(rf.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.repos.is_empty()
     }
 
+    /// Iterate over all `(RepoId, SectionBlock<Repo>)` pairs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("test").unwrap()));
+    /// for (id, _block) in rf.iter() {
+    ///     println!("Found repo: {}", id);
+    /// }
+    /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&RepoId, &SectionBlock<Repo>)> {
         self.repos.iter()
     }
 
-    /// Iterate over all `Repo` data (wrapping `SectionBlock`).
+    /// Iterate over all [`Repo`] data values (wrapping `SectionBlock`).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("test").unwrap()));
+    /// for repo in rf.repos() {
+    ///     println!("Repo ID: {}", repo.id);
+    /// }
+    /// ```
     pub fn repos(&self) -> impl Iterator<Item = &Repo> {
         self.repos.values().map(|block| &block.data)
     }
 
+    /// Iterate over all repository IDs.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, Repo, RepoId};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set(Repo::new(RepoId::try_new("test").unwrap()));
+    /// let ids: Vec<&RepoId> = rf.repo_ids().collect();
+    /// assert_eq!(ids.len(), 1);
+    /// ```
     pub fn repo_ids(&self) -> impl Iterator<Item = &RepoId> {
         self.repos.keys()
     }
 
+    /// Get a reference to the `[main]` section, if present.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let rf = RepoFile::parse("[main]\ncachedir=/var/cache/dnf\n").unwrap();
+    /// assert!(rf.main().is_some());
+    /// ```
     pub fn main(&self) -> Option<&SectionBlock<MainConfig>> {
         self.main.as_ref()
     }
 
+    /// Get a mutable reference to the `[main]` section, if present.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let mut rf = RepoFile::parse("[main]\ncachedir=/var/cache/dnf\n").unwrap();
+    /// if let Some(main) = rf.main_mut() {
+    ///     main.data.keepcache = Some(dnf_repofile::DnfBool::True);
+    /// }
+    /// ```
     pub fn main_mut(&mut self) -> Option<&mut SectionBlock<MainConfig>> {
         self.main.as_mut()
     }
 
+    /// Set the `[main]` configuration, replacing any existing one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, MainConfig};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set_main(MainConfig::default());
+    /// assert!(rf.main().is_some());
+    /// ```
     pub fn set_main(&mut self, config: MainConfig) {
         self.main = Some(SectionBlock {
             header_comments: Vec::new(),
@@ -1197,13 +1490,47 @@ impl RepoFile {
         });
     }
 
+    /// Remove the `[main]` section, if present.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::{RepoFile, MainConfig};
+    ///
+    /// let mut rf = RepoFile::new();
+    /// rf.set_main(MainConfig::default());
+    /// rf.remove_main();
+    /// assert!(rf.main().is_none());
+    /// ```
     pub fn remove_main(&mut self) {
         self.main = None;
     }
 
-    /// Merge another RepoFile into this one.
-    /// `[main]`: other's Some fields overwrite self's None fields.
-    /// repos: duplicate IDs are overwritten by other, non-duplicates are appended.
+    /// Merge another [`RepoFile`] into this one.
+    ///
+    /// # `[main]` merge strategy
+    ///
+    /// For each field in the other `[main]` section, if the other's field is
+    /// `Some` and self's field is `None`, the value is copied over (i.e., other's
+    /// values fill self's gaps). Other's inline comments are also added if not
+    /// already present.
+    ///
+    /// # Repo merge strategy
+    ///
+    /// For repo sections, the other's repos overwrite self's repos by ID.
+    /// If a repo with the same ID already exists, the other's version replaces
+    /// it entirely. New repo IDs from the other file are appended.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dnf_repofile::RepoFile;
+    ///
+    /// let mut rf = RepoFile::parse("[a]\nname=A\nbaseurl=https://a.com/\n").unwrap();
+    /// let other = RepoFile::parse("[b]\nname=B\nbaseurl=https://b.com/\n").unwrap();
+    /// rf.merge(other);
+    /// assert_eq!(rf.len(), 2);
+    /// ```
     pub fn merge(&mut self, other: RepoFile) {
         if let Some(other_main) = other.main {
             if let Some(ref mut self_main) = self.main {

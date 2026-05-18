@@ -1,8 +1,75 @@
+//! Variable detection and expansion for DNF configuration values.
+//!
+//! DNF supports shell-like variable substitution in `.repo` file values.
+//! This module provides two functions:
+//!
+//! - [`expand_variables`] — substitutes `$var`, `${var}`, `${var:-default}`,
+//!   and `${var:+alt}` patterns with values from a user-provided map.
+//! - [`detect_variables`] — scans a string and returns the names of all
+//!   variables referenced (without expanding them).
+//!
+//! # Supported Syntax
+//!
+//! | Pattern               | Behavior                                      |
+//! |-----------------------|-----------------------------------------------|
+//! | `$releasever`         | Simple variable reference                      |
+//! | `${basearch}`         | Braced variable reference                      |
+//! | `${var:-default}`     | Use `default` if `var` is unset or empty       |
+//! | `${var:+alt}`         | Use `alt` if `var` is set and non-empty        |
+//! | `\$releasever`        | Escaped dollar sign (literal `$releasever`)    |
+//!
+//! Recursive expansion is supported up to a maximum depth of 32.
+
 use crate::error::ExpandError;
 use std::collections::{HashMap, HashSet};
 
 const MAX_EXPRESSION_DEPTH: u32 = 32;
 
+/// Expand DNF variables in a string using the given substitution map.
+///
+/// Supports `$var`, `${var}`, `${var:-default}`, and `${var:+alt}` syntax.
+/// Backslash-escaped `\$` sequences are treated as literal dollar signs.
+/// Recursive expansion is supported up to a depth of 32.
+///
+/// # Errors
+///
+/// Returns [`ExpandError::VariableNotFound`] if a referenced variable is not
+/// present in the substitution map (and no `:-default` fallback is provided).
+/// Returns [`ExpandError::MaxDepthExceeded`] if the expansion recursion limit
+/// is hit.
+/// Returns [`ExpandError::MalformedExpression`] for syntactically invalid
+/// variable expressions (e.g., a bare `$` at end of string).
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+/// use dnf_repofile::expand_variables;
+///
+/// let mut vars = HashMap::new();
+/// vars.insert("releasever".to_string(), "38".to_string());
+/// vars.insert("basearch".to_string(), "x86_64".to_string());
+///
+/// let expanded = expand_variables(
+///     "fedora-$releasever-$basearch",
+///     &vars,
+/// ).unwrap();
+/// assert_eq!(expanded, "fedora-38-x86_64");
+/// ```
+///
+/// ```
+/// use std::collections::HashMap;
+/// use dnf_repofile::expand_variables;
+///
+/// let vars = HashMap::new();
+///
+/// // Default value substitution
+/// let expanded = expand_variables(
+///     "${releasever:-39}",
+///     &vars,
+/// ).unwrap();
+/// assert_eq!(expanded, "39");
+/// ```
 pub fn expand_variables(
     input: &str,
     vars: &HashMap<String, String>,
@@ -126,6 +193,30 @@ fn expand_recursive(
     Ok(result)
 }
 
+/// Detect all DNF variable references in a string without expanding them.
+///
+/// Scans the input for `$var` and `${var}` patterns and returns the variable
+/// names. Each variable name is returned once per occurrence (duplicates
+/// are not deduplicated).
+///
+/// Backslash-escaped `\$` sequences are ignored.
+///
+/// # Examples
+///
+/// ```
+/// use dnf_repofile::detect_variables;
+///
+/// let vars = detect_variables("$releasever/${basearch}/repo");
+/// assert_eq!(vars, vec!["releasever", "basearch"]);
+/// ```
+///
+/// ```
+/// use dnf_repofile::detect_variables;
+///
+/// // Escaped dollar signs are skipped
+/// let vars = detect_variables("\\$releasever");
+/// assert!(vars.is_empty());
+/// ```
 pub fn detect_variables(input: &str) -> Vec<String> {
     let mut vars = Vec::new();
     let chars: Vec<char> = input.chars().collect();

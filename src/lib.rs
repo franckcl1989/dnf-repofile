@@ -1,10 +1,33 @@
-//! A pure Rust library for parsing, managing, and rendering
-//! DNF/YUM `.repo` configuration files.
+//! A pure Rust library for parsing, managing, validating, diffing,
+//! and rendering DNF/YUM `.repo` configuration files.
 //!
-//! Provides full CRUD at three levels:
-//! - **ReposDir** — manage a directory of `.repo` files
-//! - **RepoFile** — parse, modify, render a single `.repo` file
-//! - **Repo** / **MainConfig** — type-safe access to individual options
+//! # Three-Level API
+//!
+//! | Level  | Type                       | Purpose                               |
+//! |--------|----------------------------|---------------------------------------|
+//! | Macro  | [`ReposDir`]               | Manage `/etc/yum.repos.d/` directory  |
+//! | Meso   | [`RepoFile`]               | Parse, modify, render a `.repo` file  |
+//! | Micro  | [`Repo`], [`MainConfig`]   | Type-safe access to individual fields |
+//!
+//! # Quick Start
+//!
+//! ```
+//! use dnf_repofile::{RepoFile, RepoId};
+//!
+//! let input = "[epel]\nname=EPEL\nbaseurl=https://example.com/\n";
+//! let rf = RepoFile::parse(input).unwrap();
+//! let block = rf.get(&RepoId::try_new("epel").unwrap()).unwrap();
+//! println!("{}", block.data.name.as_ref().unwrap());
+//! ```
+//!
+//! # Features
+//!
+//! - **Parse** `.repo` files into fully-typed Rust structs
+//! - **Render** back to text with comment/whitespace preservation
+//! - **Validate** repository configurations
+//! - **Diff** between repo files or individual repos
+//! - **Builder** pattern for programmatic creation
+//! - **Variable expansion** (`$releasever`, `${basearch}`, etc.)
 
 pub mod builder;
 pub mod diff;
