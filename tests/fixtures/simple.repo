@@ -1,0 +1,6 @@
+[epel]
+name=Extra Packages for Enterprise Linux $releasever - $basearch
+baseurl=https://download.example.com/pub/epel/$releasever/Everything/$basearch/
+enabled=1
+gpgcheck=1
+gpgkey=https://download.example.com/pub/epel/RPM-GPG-KEY-EPEL-$releasever

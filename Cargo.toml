@@ -1,0 +1,18 @@
+[package]
+name = "dnf-repofile"
+version = "0.1.0"
+edition = "2021"
+description = "Pure Rust library for parsing, managing, and rendering DNF/YUM .repo configuration files"
+license = "MIT"
+repository = "https://github.com/franckcl1989/dnf-repofile"
+
+[dependencies]
+indexmap = "2"
+url = { version = "2", features = ["serde"] }
+camino = "1"
+nutype = "0.6"
+derive_more = { version = "1", features = ["display", "as_ref", "deref", "from"] }
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"

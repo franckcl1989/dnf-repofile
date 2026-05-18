@@ -1,0 +1,34 @@
+# Preamble comment
+# Multi-line preamble
+
+[main]
+gpgcheck=1
+max_parallel_downloads=10
+
+[baseos]
+name=Rocky Linux $releasever - BaseOS
+baseurl=https://mirror.example.com/rocky/$releasever/BaseOS/$basearch/os/
+# Multiple baseurl entries for failover
+baseurl=https://mirror2.example.com/rocky/$releasever/BaseOS/$basearch/os/
+enabled=1
+gpgcheck=1
+gpgkey=https://mirror.example.com/rocky/RPM-GPG-KEY-Rocky-$releasever
+priority=10
+
+[appstream]
+name=Rocky Linux $releasever - AppStream
+baseurl=https://mirror.example.com/rocky/$releasever/AppStream/$basearch/os/
+metalink=https://mirror.example.com/rocky/$releasever/AppStream/$basearch/metalink.xml
+enabled=1
+gpgcheck=1
+gpgkey=https://mirror.example.com/rocky/RPM-GPG-KEY-Rocky-$releasever
+
+[custom-repo]
+name=My Custom Packages
+baseurl=https://custom.example.com/repo/
+enabled=0
+gpgcheck=0
+module_hotfixes=1
+cost=500
+# This repo has some custom options
+custom_option=some_value
