@@ -821,12 +821,12 @@ mod api_coverage {
     }
 
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn diff_file_with_main_changes() {
         let mut a = RepoFile::new();
         a.set_main(MainConfig::default());
 
         let mut b = RepoFile::new();
-#[allow(clippy::field_reassign_with_default)]
         let mut mc = MainConfig::default();
         mc.debuglevel = Some(DebugLevel::try_new(5).unwrap());
         b.set_main(mc);
