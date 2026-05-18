@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 /// Top-level error type for the library
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("failed to parse .repo file: {0}")]
@@ -28,6 +29,12 @@ pub enum Error {
 /// Result type alias
 pub type Result<T> = std::result::Result<T, Error>;
 
+impl From<String> for Error {
+    fn from(s: String) -> Self {
+        Error::Other(s)
+    }
+}
+
 /// Error when parsing a boolean value fails
 #[derive(Error, Debug)]
 #[error("invalid boolean value: '{input}'")]
@@ -36,6 +43,7 @@ pub struct ParseBoolError {
 }
 
 /// Error when parsing a .repo file fails
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ParseError {
     #[error("invalid section header at line {line}: '{header}'")]
@@ -62,6 +70,7 @@ pub struct AddRepoError {
 }
 
 /// Error when expanding variables fails
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ExpandError {
     #[error("variable '{name}' not found in substitution map")]
