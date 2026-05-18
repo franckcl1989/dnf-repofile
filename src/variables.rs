@@ -81,12 +81,12 @@ fn expand_recursive(
                     }
                     let var_val = vars.get(&name);
                     Some(if is_default {
-                        if var_val.map_or(true, |v| v.is_empty()) {
+                        if var_val.is_none_or(|v| v.is_empty()) {
                             val
                         } else {
-                            var_val.unwrap().clone()
+                            var_val.cloned().unwrap_or(val)
                         }
-                    } else if var_val.map_or(false, |v| !v.is_empty()) {
+                    } else if var_val.is_some_and(|v| !v.is_empty()) {
                         val
                     } else {
                         String::new()
@@ -111,9 +111,7 @@ fn expand_recursive(
             } else {
                 let replacement = vars
                     .get(&name)
-                    .ok_or_else(|| ExpandError::VariableNotFound {
-                        name: name.clone(),
-                    })?;
+                    .ok_or_else(|| ExpandError::VariableNotFound { name: name.clone() })?;
                 result.push_str(replacement);
             }
 

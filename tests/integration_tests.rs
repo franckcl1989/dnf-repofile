@@ -7,18 +7,30 @@ fn test_full_workflow() {
 
     // Verify [main]
     let main_block = rf.main().unwrap();
-    assert_eq!(main_block.data.extras.get("max_parallel_downloads").unwrap()[0], "10");
+    assert_eq!(
+        main_block
+            .data
+            .extras
+            .get("max_parallel_downloads")
+            .unwrap()[0],
+        "10"
+    );
 
     // Verify repos
     assert_eq!(rf.len(), 3);
     let baseos = rf.get(&RepoId::try_new("baseos").unwrap()).unwrap();
-    assert_eq!(baseos.data.name.as_ref().unwrap().as_ref(), "Rocky Linux $releasever - BaseOS");
+    assert_eq!(
+        baseos.data.name.as_ref().unwrap().as_ref(),
+        "Rocky Linux $releasever - BaseOS"
+    );
     assert_eq!(baseos.data.baseurl.len(), 2);
     assert_eq!(baseos.data.priority.unwrap().to_string(), "10");
 
     // Modify a repo -- update both typed data and raw entry for round-trip consistency
     {
-        let block = rf.get_mut(&RepoId::try_new("custom-repo").unwrap()).unwrap();
+        let block = rf
+            .get_mut(&RepoId::try_new("custom-repo").unwrap())
+            .unwrap();
         block.data.enabled = Some(DnfBool::True);
         if let Some(entry) = block.raw_entries.iter_mut().find(|e| e.key == "enabled") {
             entry.value = "1".to_string();
@@ -53,7 +65,10 @@ fn test_variable_expansion_in_url() {
     let input = "[testrepo]\nname=Test\nbaseurl=https://example.com/$releasever/$basearch/\n";
     let rf = RepoFile::parse(input).unwrap();
     let block = rf.get(&RepoId::try_new("testrepo").unwrap()).unwrap();
-    assert_eq!(block.data.baseurl[0].as_str(), "https://example.com/$releasever/$basearch/");
+    assert_eq!(
+        block.data.baseurl[0].as_str(),
+        "https://example.com/$releasever/$basearch/"
+    );
 }
 
 #[test]
@@ -83,7 +98,10 @@ fn test_parse_with_extras_preserved() {
     let input = "[testrepo]\nname=Test\nbaseurl=https://example.com/\ncustom_key=custom_value\nanother_key=another_value\n";
     let rf = RepoFile::parse(input).unwrap();
     let block = rf.get(&RepoId::try_new("testrepo").unwrap()).unwrap();
-    assert_eq!(block.data.extras.get("custom_key").unwrap()[0], "custom_value");
+    assert_eq!(
+        block.data.extras.get("custom_key").unwrap()[0],
+        "custom_value"
+    );
     assert_eq!(block.data.extras.len(), 2);
 }
 

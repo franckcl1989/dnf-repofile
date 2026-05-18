@@ -124,10 +124,10 @@ impl Repo {
             Some(UrlSource::BaseUrl(self.baseurl.clone()))
         } else if let Some(ref url) = self.mirrorlist {
             Some(UrlSource::MirrorList(url.clone()))
-        } else if let Some(ref url) = self.metalink {
-            Some(UrlSource::Metalink(url.clone()))
         } else {
-            None
+            self.metalink
+                .as_ref()
+                .map(|url| UrlSource::Metalink(url.clone()))
         }
     }
 }

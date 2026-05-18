@@ -104,15 +104,27 @@ fn test_cost_non_negative() {
 
 #[test]
 fn test_dnf_bool_parse_true_variants() {
-    for v in &["1", "yes", "true", "on", "Yes", "YES", "True", "TRUE", "On", "ON"] {
-        assert_eq!(DnfBool::parse(v).unwrap(), DnfBool::True, "failed for '{v}'");
+    for v in &[
+        "1", "yes", "true", "on", "Yes", "YES", "True", "TRUE", "On", "ON",
+    ] {
+        assert_eq!(
+            DnfBool::parse(v).unwrap(),
+            DnfBool::True,
+            "failed for '{v}'"
+        );
     }
 }
 
 #[test]
 fn test_dnf_bool_parse_false_variants() {
-    for v in &["0", "no", "false", "off", "No", "NO", "False", "FALSE", "Off", "OFF"] {
-        assert_eq!(DnfBool::parse(v).unwrap(), DnfBool::False, "failed for '{v}'");
+    for v in &[
+        "0", "no", "false", "off", "No", "NO", "False", "FALSE", "Off", "OFF",
+    ] {
+        assert_eq!(
+            DnfBool::parse(v).unwrap(),
+            DnfBool::False,
+            "failed for '{v}'"
+        );
     }
 }
 
@@ -272,7 +284,10 @@ fn test_error_level_default() {
 
 #[test]
 fn test_metadata_expire_duration() {
-    assert_eq!(MetadataExpire::Duration(3600), MetadataExpire::Duration(3600));
+    assert_eq!(
+        MetadataExpire::Duration(3600),
+        MetadataExpire::Duration(3600)
+    );
 }
 
 #[test]

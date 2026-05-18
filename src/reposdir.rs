@@ -98,9 +98,7 @@ impl ReposDir {
     }
 
     pub fn create_file(&mut self, filename: &str) -> &mut RepoFile {
-        self.files
-            .entry(filename.to_string())
-            .or_insert_with(RepoFile::new)
+        self.files.entry(filename.to_string()).or_default()
     }
 
     pub fn find_repo(&self, id: &RepoId) -> Option<(&str, &Repo)> {
@@ -136,9 +134,10 @@ impl ReposDir {
     }
 
     pub fn iter_repos(&self) -> impl Iterator<Item = (&str, &Repo)> {
-        self.files
-            .iter()
-            .flat_map(|(name, rf)| rf.iter().map(move |(_, block)| (name.as_str(), &block.data)))
+        self.files.iter().flat_map(|(name, rf)| {
+            rf.iter()
+                .map(move |(_, block)| (name.as_str(), &block.data))
+        })
     }
 
     #[must_use]

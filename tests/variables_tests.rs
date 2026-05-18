@@ -37,10 +37,7 @@ fn test_expand_default_unset() {
 fn test_expand_alt_set() {
     let mut v = HashMap::new();
     v.insert("releasever".into(), "9".into());
-    assert_eq!(
-        expand_variables("${releasever:+alt}", &v).unwrap(),
-        "alt"
-    );
+    assert_eq!(expand_variables("${releasever:+alt}", &v).unwrap(), "alt");
 }
 
 #[test]
@@ -58,8 +55,7 @@ fn test_expand_missing_error() {
 
 #[test]
 fn test_detect_variables() {
-    let vars =
-        detect_variables("https://x.com/$releasever/${basearch}/$arch/");
+    let vars = detect_variables("https://x.com/$releasever/${basearch}/$arch/");
     assert!(vars.contains(&"releasever".to_string()));
     assert!(vars.contains(&"basearch".to_string()));
     assert!(vars.contains(&"arch".to_string()));

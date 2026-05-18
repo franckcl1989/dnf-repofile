@@ -2,7 +2,7 @@ use crate::types::*;
 use camino::Utf8PathBuf;
 use indexmap::IndexMap;
 
-/// DNF [main] configuration section
+/// DNF `[main]` configuration section
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MainConfig {
     pub arch: Option<String>,

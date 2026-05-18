@@ -23,7 +23,10 @@ fn test_parse_simple_repo() {
     let block = rf.get(&epel_id).expect("epel section not found");
     let repo = &block.data;
 
-    assert_eq!(repo.name.as_ref().map(|n| n.as_ref()), Some("Extra Packages for Enterprise Linux $releasever - $basearch"));
+    assert_eq!(
+        repo.name.as_ref().map(|n| n.as_ref()),
+        Some("Extra Packages for Enterprise Linux $releasever - $basearch")
+    );
     assert_eq!(repo.baseurl.len(), 1);
     assert_eq!(
         repo.baseurl[0].as_str(),
@@ -74,9 +77,18 @@ enabled=1
     let rid = RepoId::try_new("multirepo").unwrap();
     let repo = &rf.get(&rid).unwrap().data;
     assert_eq!(repo.baseurl.len(), 3);
-    assert_eq!(repo.baseurl[0].as_str(), "https://mirror1.example.com/repo/");
-    assert_eq!(repo.baseurl[1].as_str(), "https://mirror2.example.com/repo/");
-    assert_eq!(repo.baseurl[2].as_str(), "https://mirror3.example.com/repo/");
+    assert_eq!(
+        repo.baseurl[0].as_str(),
+        "https://mirror1.example.com/repo/"
+    );
+    assert_eq!(
+        repo.baseurl[1].as_str(),
+        "https://mirror2.example.com/repo/"
+    );
+    assert_eq!(
+        repo.baseurl[2].as_str(),
+        "https://mirror3.example.com/repo/"
+    );
 }
 
 #[test]
@@ -118,7 +130,10 @@ enabled=1
 
     // Check preamble captures the file-level comment before any section
     let has_header = rf.preamble.iter().any(|l| l.contains("Header comment"));
-    assert!(has_header, "file-level comment should be preserved in preamble");
+    assert!(
+        has_header,
+        "file-level comment should be preserved in preamble"
+    );
 
     // Check inline comments preserved in item_comments
     assert_eq!(
@@ -219,10 +234,7 @@ flag_off=off
     assert_eq!(repo.enabled, Some(DnfBool::True));
 
     // Unknown keys go to extras
-    assert_eq!(
-        repo.extras.get("flag_yes"),
-        Some(&vec!["yes".to_string()])
-    );
+    assert_eq!(repo.extras.get("flag_yes"), Some(&vec!["yes".to_string()]));
 }
 
 #[test]
@@ -248,7 +260,10 @@ name=Bad Repo
     // Empty section name
     let input2 = "[]\nname=Empty\n";
     let result2 = RepoFile::parse(input2);
-    assert!(result2.is_err(), "expected parse error for empty section name");
+    assert!(
+        result2.is_err(),
+        "expected parse error for empty section name"
+    );
 }
 
 #[test]
@@ -291,7 +306,11 @@ custom_option=some_value
 
     // Compare: same number of repos
     assert_eq!(rf1.len(), rf2.len(), "same repo count");
-    assert_eq!(rf1.main.is_some(), rf2.main.is_some(), "both have or lack main");
+    assert_eq!(
+        rf1.main.is_some(),
+        rf2.main.is_some(),
+        "both have or lack main"
+    );
 
     // Compare preamble
     assert_eq!(rf1.preamble, rf2.preamble, "preamble should match");
@@ -299,7 +318,11 @@ custom_option=some_value
     // Compare main section
     if let (Some(m1), Some(m2)) = (rf1.main(), rf2.main()) {
         assert_eq!(m1.data, m2.data, "main config data should match");
-        assert_eq!(m1.raw_entries.len(), m2.raw_entries.len(), "main raw entries count should match");
+        assert_eq!(
+            m1.raw_entries.len(),
+            m2.raw_entries.len(),
+            "main raw entries count should match"
+        );
     }
 
     // Compare each repo
@@ -450,10 +473,7 @@ fn test_parse_missing_equals() {
     // Also test key that is only whitespace before =
     let input2 = "[test]\n =value\n";
     let result2 = RepoFile::parse(input2);
-    assert!(
-        result2.is_err(),
-        "empty key before = should error"
-    );
+    assert!(result2.is_err(), "empty key before = should error");
 }
 
 #[test]

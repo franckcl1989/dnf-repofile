@@ -10,8 +10,12 @@ fn test_mainconfig_defaults() {
 }
 
 #[test]
+#[allow(clippy::field_reassign_with_default)]
 fn test_mainconfig_set_debuglevel() {
-    let mut mc = MainConfig::default();
+    let mut mc = MainConfig {
+        debuglevel: Some(DebugLevel::try_new(5).unwrap()),
+        ..Default::default()
+    };
     mc.debuglevel = Some(DebugLevel::try_new(5).unwrap());
     assert_eq!(*mc.debuglevel.unwrap(), 5);
 }

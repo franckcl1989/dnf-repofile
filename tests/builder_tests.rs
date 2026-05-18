@@ -24,9 +24,7 @@ fn test_builder_from_existing() {
         .enabled(DnfBool::True)
         .baseurl("https://example.com/".parse().unwrap())
         .build();
-    let modified = RepoBuilder::from(&existing)
-        .enabled(DnfBool::False)
-        .build();
+    let modified = RepoBuilder::from(&existing).enabled(DnfBool::False).build();
     assert_eq!(modified.name.unwrap().as_ref(), "Original");
     assert_eq!(modified.enabled.unwrap(), DnfBool::False);
 }

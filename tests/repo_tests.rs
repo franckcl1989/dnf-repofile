@@ -20,7 +20,8 @@ fn test_repo_url_source_none_when_empty() {
 #[test]
 fn test_repo_url_source_baseurl() {
     let mut repo = Repo::new(RepoId::try_new("testrepo").unwrap());
-    repo.baseurl.push("https://example.com/repo/".parse().unwrap());
+    repo.baseurl
+        .push("https://example.com/repo/".parse().unwrap());
     match repo.url_source() {
         Some(UrlSource::BaseUrl(urls)) => assert_eq!(urls.len(), 1),
         other => panic!("expected BaseUrl, got {:?}", other),
@@ -32,7 +33,7 @@ fn test_repo_url_source_mirrorlist() {
     let mut repo = Repo::new(RepoId::try_new("testrepo").unwrap());
     repo.mirrorlist = Some("https://example.com/mirrorlist".parse().unwrap());
     match repo.url_source() {
-        Some(UrlSource::MirrorList(_)) => {},
+        Some(UrlSource::MirrorList(_)) => {}
         other => panic!("expected MirrorList, got {:?}", other),
     }
 }
@@ -40,11 +41,12 @@ fn test_repo_url_source_mirrorlist() {
 #[test]
 fn test_repo_url_source_prefers_baseurl_when_all_set() {
     let mut repo = Repo::new(RepoId::try_new("testrepo").unwrap());
-    repo.baseurl.push("https://example.com/repo/".parse().unwrap());
+    repo.baseurl
+        .push("https://example.com/repo/".parse().unwrap());
     repo.mirrorlist = Some("https://example.com/mirrorlist".parse().unwrap());
     repo.metalink = Some("https://example.com/metalink".parse().unwrap());
     match repo.url_source() {
-        Some(UrlSource::BaseUrl(_)) => {},
+        Some(UrlSource::BaseUrl(_)) => {}
         other => panic!("expected BaseUrl, got {:?}", other),
     }
 }

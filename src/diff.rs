@@ -158,7 +158,8 @@ pub fn diff_repos(a: &Repo, b: &Repo) -> RepoDiff {
         },
     );
 
-    diff.has_changes = !diff.changed.is_empty() || !diff.added.is_empty() || !diff.removed.is_empty();
+    diff.has_changes =
+        !diff.changed.is_empty() || !diff.added.is_empty() || !diff.removed.is_empty();
     diff
 }
 
@@ -192,7 +193,8 @@ pub fn diff_main(a: &MainConfig, b: &MainConfig) -> ConfigDiff {
         b.best.map(|d| d.to_string()),
     );
 
-    diff.has_changes = !diff.changed.is_empty() || !diff.added.is_empty() || !diff.removed.is_empty();
+    diff.has_changes =
+        !diff.changed.is_empty() || !diff.added.is_empty() || !diff.removed.is_empty();
     diff
 }
 

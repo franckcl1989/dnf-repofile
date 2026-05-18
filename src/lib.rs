@@ -6,25 +6,25 @@
 //! - **RepoFile** — parse, modify, render a single `.repo` file
 //! - **Repo** / **MainConfig** — type-safe access to individual options
 
-pub mod error;
-pub mod types;
-pub mod repo;
-pub mod mainconfig;
-pub mod repofile;
 pub mod builder;
-pub mod validate;
 pub mod diff;
-pub mod variables;
+pub mod error;
+pub mod mainconfig;
+pub mod repo;
+pub mod repofile;
 pub mod reposdir;
+pub mod types;
+pub mod validate;
+pub mod variables;
 
 // Re-export key types for convenience
-pub use error::{Error, Result};
-pub use types::*;
-pub use repo::Repo;
-pub use mainconfig::MainConfig;
-pub use repofile::{RepoFile, SectionBlock, RawEntry};
 pub use builder::RepoBuilder;
-pub use validate::{ValidationReport, ValidationIssue, IssueLevel, IssueLocation};
-pub use diff::{FileDiff, RepoDiff, ConfigDiff, diff_files, diff_repos, diff_main};
-pub use variables::{expand_variables, detect_variables};
+pub use diff::{diff_files, diff_main, diff_repos, ConfigDiff, FileDiff, RepoDiff};
+pub use error::{Error, Result};
+pub use mainconfig::MainConfig;
+pub use repo::Repo;
+pub use repofile::{RawEntry, RepoFile, SectionBlock};
 pub use reposdir::ReposDir;
+pub use types::*;
+pub use validate::{IssueLevel, IssueLocation, ValidationIssue, ValidationReport};
+pub use variables::{detect_variables, expand_variables};

@@ -117,11 +117,8 @@ baseurl=http://example.com/${distrib}/
         let mut vars = HashMap::new();
         vars.insert("releasever".into(), "9".into());
         vars.insert("basearch".into(), "x86_64".into());
-        let result = expand_variables(
-            "http://example.com/$releasever/$basearch/os/",
-            &vars,
-        )
-        .unwrap();
+        let result =
+            expand_variables("http://example.com/$releasever/$basearch/os/", &vars).unwrap();
         assert_eq!(result, "http://example.com/9/x86_64/os/");
     }
 
@@ -158,8 +155,14 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-local
         let rf = RepoFile::parse(input).unwrap();
         let block = rf.get(&RepoId::try_new("repo").unwrap()).unwrap();
         assert_eq!(block.data.gpgkey.len(), 3);
-        assert!(block.data.gpgkey.contains(&"http://example.com/key1".to_string()));
-        assert!(block.data.gpgkey.contains(&"file:///etc/pki/rpm-gpg/RPM-GPG-KEY-local".to_string()));
+        assert!(block
+            .data
+            .gpgkey
+            .contains(&"http://example.com/key1".to_string()));
+        assert!(block
+            .data
+            .gpgkey
+            .contains(&"file:///etc/pki/rpm-gpg/RPM-GPG-KEY-local".to_string()));
     }
 
     // --- proxy-username-password.feature: Proxy authentication ---
@@ -178,14 +181,22 @@ proxy_password=mypass
         let block = rf.get(&RepoId::try_new("repo").unwrap()).unwrap();
         match &block.data.proxy {
             ProxySetting::Url(url) => {
-                assert!(url.as_str().starts_with("http://proxy.example.com:8080"),
+                assert!(
+                    url.as_str().starts_with("http://proxy.example.com:8080"),
                     "expected proxy URL to start with http://proxy.example.com:8080, got: {}",
-                    url.as_str());
-            },
+                    url.as_str()
+                );
+            }
             _ => panic!("expected ProxySetting::Url"),
         }
-        assert_eq!(block.data.proxy_username.as_ref().unwrap().as_ref(), "myuser");
-        assert_eq!(block.data.proxy_password.as_ref().unwrap().as_ref(), "mypass");
+        assert_eq!(
+            block.data.proxy_username.as_ref().unwrap().as_ref(),
+            "myuser"
+        );
+        assert_eq!(
+            block.data.proxy_password.as_ref().unwrap().as_ref(),
+            "mypass"
+        );
     }
 
     // --- ssl.feature: SSL configuration ---
@@ -269,19 +280,22 @@ includepkgs=thunderbird
     fn metadata_expire_variants() {
         // Duration in seconds
         let input = "[repo]\nname=T\nbaseurl=http://x.com/\nmetadata_expire=3600\n";
-        let rf = RepoFile::parse(&input).unwrap();
+        let rf = RepoFile::parse(input).unwrap();
         let block = rf.get(&RepoId::try_new("repo").unwrap()).unwrap();
-        assert_eq!(block.data.metadata_expire, Some(MetadataExpire::Duration(3600)));
+        assert_eq!(
+            block.data.metadata_expire,
+            Some(MetadataExpire::Duration(3600))
+        );
 
         // "never" keyword
         let input = "[repo]\nname=T\nbaseurl=http://x.com/\nmetadata_expire=never\n";
-        let rf = RepoFile::parse(&input).unwrap();
+        let rf = RepoFile::parse(input).unwrap();
         let block = rf.get(&RepoId::try_new("repo").unwrap()).unwrap();
         assert_eq!(block.data.metadata_expire, Some(MetadataExpire::Never));
 
         // -1 as metadata_expire: parser may parse as Duration(-1) or Never
         let input = "[repo]\nname=T\nbaseurl=http://x.com/\nmetadata_expire=-1\n";
-        let result = RepoFile::parse(&input);
+        let result = RepoFile::parse(input);
         // Either parses or puts -1 in extras (implementation-dependent)
         if let Ok(rf) = result {
             let block = rf.get(&RepoId::try_new("repo").unwrap()).unwrap();
@@ -429,9 +443,18 @@ priority=20
     fn storage_size_unit_parsing() {
         // Note: G/M/K units are parsed with power-of-2 semantics (1024-based)
         let cases = vec![
-            ("[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=1G\n", 1_073_741_824),
-            ("[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=500M\n", 524_288_000),
-            ("[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=100K\n", 102_400),
+            (
+                "[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=1G\n",
+                1_073_741_824,
+            ),
+            (
+                "[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=500M\n",
+                524_288_000,
+            ),
+            (
+                "[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=100K\n",
+                102_400,
+            ),
             ("[r]\nname=T\nbaseurl=http://x.com/\nbandwidth=1024\n", 1024),
         ];
         for (input, expected_bytes) in cases {
@@ -559,10 +582,19 @@ tsflags=test
     #[test]
     fn all_repo_boolean_fields_parse_correctly() {
         let bool_fields = vec![
-            "enabled", "gpgcheck", "repo_gpgcheck", "localpkg_gpgcheck",
-            "skip_if_unavailable", "module_hotfixes", "deltarpm",
-            "enablegroups", "fastestmirror", "countme",
-            "sslverify", "sslverifystatus", "proxy_sslverify",
+            "enabled",
+            "gpgcheck",
+            "repo_gpgcheck",
+            "localpkg_gpgcheck",
+            "skip_if_unavailable",
+            "module_hotfixes",
+            "deltarpm",
+            "enablegroups",
+            "fastestmirror",
+            "countme",
+            "sslverify",
+            "sslverifystatus",
+            "proxy_sslverify",
         ];
         let mut input = String::from("[repo]\nname=T\nbaseurl=http://x.com/\n");
         for field in &bool_fields {
@@ -570,13 +602,17 @@ tsflags=test
         }
         let rf = RepoFile::parse(&input).unwrap();
         let block = rf.get(&RepoId::try_new("repo").unwrap()).unwrap();
-        for field in &bool_fields {
-            match field.as_ref() {
+        for &field in &bool_fields {
+            match field {
                 "enabled" => assert_eq!(block.data.enabled, Some(DnfBool::True)),
                 "gpgcheck" => assert_eq!(block.data.gpgcheck, Some(DnfBool::True)),
                 "repo_gpgcheck" => assert_eq!(block.data.repo_gpgcheck, Some(DnfBool::True)),
-                "localpkg_gpgcheck" => assert_eq!(block.data.localpkg_gpgcheck, Some(DnfBool::True)),
-                "skip_if_unavailable" => assert_eq!(block.data.skip_if_unavailable, Some(DnfBool::True)),
+                "localpkg_gpgcheck" => {
+                    assert_eq!(block.data.localpkg_gpgcheck, Some(DnfBool::True))
+                }
+                "skip_if_unavailable" => {
+                    assert_eq!(block.data.skip_if_unavailable, Some(DnfBool::True))
+                }
                 "module_hotfixes" => assert_eq!(block.data.module_hotfixes, Some(DnfBool::True)),
                 "deltarpm" => assert_eq!(block.data.deltarpm, Some(DnfBool::True)),
                 "enablegroups" => assert_eq!(block.data.enablegroups, Some(DnfBool::True)),
@@ -711,10 +747,7 @@ mod api_coverage {
             let main_block = rf.main_mut().unwrap();
             main_block.data.debuglevel = Some(DebugLevel::try_new(5).unwrap());
         }
-        assert_eq!(
-            rf.main().unwrap().data.debuglevel.unwrap().to_string(),
-            "5"
-        );
+        assert_eq!(rf.main().unwrap().data.debuglevel.unwrap().to_string(), "5");
     }
 
     #[test]
@@ -793,6 +826,7 @@ mod api_coverage {
         a.set_main(MainConfig::default());
 
         let mut b = RepoFile::new();
+#[allow(clippy::field_reassign_with_default)]
         let mut mc = MainConfig::default();
         mc.debuglevel = Some(DebugLevel::try_new(5).unwrap());
         b.set_main(mc);
@@ -888,9 +922,7 @@ mod api_coverage {
             .priority(Priority::try_new(50).unwrap())
             .build();
 
-        let modified = RepoBuilder::from(&original)
-            .enabled(DnfBool::False)
-            .build();
+        let modified = RepoBuilder::from(&original).enabled(DnfBool::False).build();
 
         // Unchanged fields preserved
         assert_eq!(modified.name.as_ref().unwrap().as_ref(), "Original");
@@ -945,7 +977,10 @@ mod api_coverage {
         .unwrap();
 
         assert_eq!(rd.file_names().len(), 1);
-        assert!(rd.get_file("new.repo").unwrap().contains(&RepoId::try_new("new").unwrap()));
+        assert!(rd
+            .get_file("new.repo")
+            .unwrap()
+            .contains(&RepoId::try_new("new").unwrap()));
     }
 
     // --- Repo url_source() ---
@@ -1018,11 +1053,16 @@ countme=1
         let rf2 = RepoFile::parse(&output).unwrap();
 
         let block = rf2.get(&RepoId::try_new("full-repo").unwrap()).unwrap();
-        assert_eq!(block.data.name.as_ref().unwrap().as_ref(), "Full Featured Repository");
+        assert_eq!(
+            block.data.name.as_ref().unwrap().as_ref(),
+            "Full Featured Repository"
+        );
         assert_eq!(block.data.baseurl.len(), 1);
         let mirrorlist_url = block.data.mirrorlist.as_ref().unwrap().as_str();
-        assert!(mirrorlist_url.contains("mirrors.example.com/mirrorlist"),
-            "mirrorlist URL = {mirrorlist_url}");
+        assert!(
+            mirrorlist_url.contains("mirrors.example.com/mirrorlist"),
+            "mirrorlist URL = {mirrorlist_url}"
+        );
         assert_eq!(block.data.enabled, Some(DnfBool::True));
         assert_eq!(block.data.priority.unwrap().to_string(), "50");
         assert_eq!(block.data.cost.unwrap().to_string(), "500");
@@ -1080,7 +1120,10 @@ zchunk=1
         assert_eq!(main.data.plugins, Some(DnfBool::True));
         assert_eq!(main.data.protect_running_kernel, Some(DnfBool::True));
         assert_eq!(main.data.strict, Some(DnfBool::True));
-        assert_eq!(main.data.upgrade_group_objects_upgrade, Some(DnfBool::False));
+        assert_eq!(
+            main.data.upgrade_group_objects_upgrade,
+            Some(DnfBool::False)
+        );
         assert_eq!(main.data.zchunk, Some(DnfBool::True));
     }
 

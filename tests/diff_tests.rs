@@ -1,5 +1,5 @@
-use dnf_repofile::diff::*;
 use dnf_repofile::builder::RepoBuilder;
+use dnf_repofile::diff::*;
 use dnf_repofile::repofile::RepoFile;
 use dnf_repofile::types::*;
 

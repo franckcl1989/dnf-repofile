@@ -2,9 +2,14 @@
 name = "dnf-repofile"
 version = "0.1.0"
 edition = "2021"
-description = "Pure Rust library for parsing, managing, and rendering DNF/YUM .repo configuration files"
+rust-version = "1.82"
+description = "Pure Rust library for parsing, managing, validating, diffing, and rendering DNF/YUM .repo configuration files"
 license = "MIT"
 repository = "https://github.com/franckcl1989/dnf-repofile"
+readme = "README.md"
+keywords = ["dnf", "yum", "rpm", "repository", "repo", "configuration", "parser"]
+categories = ["config", "parsing"]
+documentation = "https://docs.rs/dnf-repofile"
 
 [dependencies]
 indexmap = "2"

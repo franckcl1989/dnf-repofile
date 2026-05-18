@@ -26,36 +26,113 @@ macro_rules! try_parse_nutype {
 
 #[allow(dead_code)]
 const KNOWN_REPO_KEYS: &[&str] = &[
-    "name", "baseurl", "mirrorlist", "metalink", "gpgkey", "enabled",
-    "priority", "cost", "module_hotfixes", "type", "mediaid", "enabled_metadata",
-    "excludepkgs", "includepkgs",
-    "gpgcheck", "repo_gpgcheck", "localpkg_gpgcheck", "skip_if_unavailable",
-    "deltarpm", "deltarpm_percentage", "enablegroups", "fastestmirror", "countme",
-    "bandwidth", "throttle", "minrate", "retries", "timeout",
-    "max_parallel_downloads", "metadata_expire", "ip_resolve",
-    "sslverify", "sslverifystatus", "sslcacert", "sslclientcert", "sslclientkey",
-    "proxy", "proxy_username", "proxy_password", "proxy_auth_method",
-    "proxy_sslverify", "proxy_sslcacert", "proxy_sslclientcert", "proxy_sslclientkey",
-    "username", "password", "user_agent",
+    "name",
+    "baseurl",
+    "mirrorlist",
+    "metalink",
+    "gpgkey",
+    "enabled",
+    "priority",
+    "cost",
+    "module_hotfixes",
+    "type",
+    "mediaid",
+    "enabled_metadata",
+    "excludepkgs",
+    "includepkgs",
+    "gpgcheck",
+    "repo_gpgcheck",
+    "localpkg_gpgcheck",
+    "skip_if_unavailable",
+    "deltarpm",
+    "deltarpm_percentage",
+    "enablegroups",
+    "fastestmirror",
+    "countme",
+    "bandwidth",
+    "throttle",
+    "minrate",
+    "retries",
+    "timeout",
+    "max_parallel_downloads",
+    "metadata_expire",
+    "ip_resolve",
+    "sslverify",
+    "sslverifystatus",
+    "sslcacert",
+    "sslclientcert",
+    "sslclientkey",
+    "proxy",
+    "proxy_username",
+    "proxy_password",
+    "proxy_auth_method",
+    "proxy_sslverify",
+    "proxy_sslcacert",
+    "proxy_sslclientcert",
+    "proxy_sslclientkey",
+    "username",
+    "password",
+    "user_agent",
 ];
 
 #[allow(dead_code)]
 const KNOWN_MAIN_KEYS: &[&str] = &[
-    "arch", "basearch", "releasever", "cachedir", "persistdir", "logdir",
-    "config_file_path", "installroot", "reposdir", "varsdir", "pluginconfpath",
-    "pluginpath", "debuglevel", "logfilelevel", "log_rotate", "log_size",
-    "installonly_limit", "errorlevel", "metadata_timer_sync",
-    "allow_vendor_change", "assumeno", "assumeyes", "autocheck_running_kernel",
-    "best", "cacheonly", "check_config_file_age", "clean_requirements_on_remove",
-    "debug_solver", "defaultyes", "diskspacecheck", "exclude_from_weak_autodetect",
-    "exit_on_lock", "gpgkey_dns_verification", "ignorearch", "install_weak_deps",
-    "keepcache", "log_compress", "module_obsoletes", "module_stream_switch",
-    "obsoletes", "plugins", "protect_running_kernel", "strict",
-    "upgrade_group_objects_upgrade", "zchunk",
-    "installonlypkgs", "protected_packages", "exclude_from_weak",
-    "group_package_types", "optional_metadata_types", "tsflags",
+    "arch",
+    "basearch",
+    "releasever",
+    "cachedir",
+    "persistdir",
+    "logdir",
+    "config_file_path",
+    "installroot",
+    "reposdir",
+    "varsdir",
+    "pluginconfpath",
+    "pluginpath",
+    "debuglevel",
+    "logfilelevel",
+    "log_rotate",
+    "log_size",
+    "installonly_limit",
+    "errorlevel",
+    "metadata_timer_sync",
+    "allow_vendor_change",
+    "assumeno",
+    "assumeyes",
+    "autocheck_running_kernel",
+    "best",
+    "cacheonly",
+    "check_config_file_age",
+    "clean_requirements_on_remove",
+    "debug_solver",
+    "defaultyes",
+    "diskspacecheck",
+    "exclude_from_weak_autodetect",
+    "exit_on_lock",
+    "gpgkey_dns_verification",
+    "ignorearch",
+    "install_weak_deps",
+    "keepcache",
+    "log_compress",
+    "module_obsoletes",
+    "module_stream_switch",
+    "obsoletes",
+    "plugins",
+    "protect_running_kernel",
+    "strict",
+    "upgrade_group_objects_upgrade",
+    "zchunk",
+    "installonlypkgs",
+    "protected_packages",
+    "exclude_from_weak",
+    "group_package_types",
+    "optional_metadata_types",
+    "tsflags",
     "usr_drift_protected_paths",
-    "multilib_policy", "persistence", "rpmverbosity", "module_platform_id",
+    "multilib_policy",
+    "persistence",
+    "rpmverbosity",
+    "module_platform_id",
 ];
 
 // ============================================================================
@@ -190,7 +267,9 @@ fn parse_proxy(val: &str) -> ProxySetting {
     if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("_none_") {
         return ProxySetting::Disabled;
     }
-    Url::from_str(trimmed).map(ProxySetting::Url).unwrap_or(ProxySetting::Unset)
+    Url::from_str(trimmed)
+        .map(ProxySetting::Url)
+        .unwrap_or(ProxySetting::Unset)
 }
 
 fn parse_multilib_policy(val: &str) -> Option<MultilibPolicy> {
@@ -852,12 +931,11 @@ fn build_repofile(state: ParseState) -> std::result::Result<RepoFile, ParseError
                 raw_entries: re,
             });
         } else {
-            let repo_id = RepoId::try_new(sec_name.as_str()).map_err(|_| {
-                ParseError::InvalidRepoId {
+            let repo_id =
+                RepoId::try_new(sec_name.as_str()).map_err(|_| ParseError::InvalidRepoId {
                     id: sec_name.clone(),
                     reason: "invalid characters in repo ID".into(),
-                }
-            })?;
+                })?;
             let mut repo = Repo::new(repo_id);
             let (io, ic, re) = parse_entries_into_repo(&mut repo, entries);
             rf.repos.insert(
@@ -924,30 +1002,28 @@ impl RepoFile {
             if trimmed.starts_with('[') && trimmed.ends_with(']') {
                 // Flush current section (keep pending_comments for the new section)
                 if let Some(ref sec_name) = state.current_section.take() {
-                    state.sections.insert(
-                        sec_name.clone(),
-                        std::mem::take(&mut state.current_entries),
-                    );
+                    state
+                        .sections
+                        .insert(sec_name.clone(), std::mem::take(&mut state.current_entries));
                 }
 
                 let section_name = trimmed[1..trimmed.len() - 1].trim().to_string();
                 if section_name.is_empty() {
                     return Err(ParseError::EmptySectionName);
                 }
-                if section_name != "main" {
-                    if RepoId::try_new(section_name.as_str()).is_err() {
-                        return Err(ParseError::InvalidRepoId {
-                            id: section_name.clone(),
-                            reason: "invalid characters in repo ID".into(),
-                        });
-                    }
+                if section_name != "main" && RepoId::try_new(section_name.as_str()).is_err() {
+                    return Err(ParseError::InvalidRepoId {
+                        id: section_name.clone(),
+                        reason: "invalid characters in repo ID".into(),
+                    });
                 }
 
                 // Assign pending comments as header_comments of the NEW section
                 if !state.pending_comments.is_empty() {
-                    state
-                        .section_header_comments
-                        .insert(section_name.clone(), std::mem::take(&mut state.pending_comments));
+                    state.section_header_comments.insert(
+                        section_name.clone(),
+                        std::mem::take(&mut state.pending_comments),
+                    );
                 }
 
                 state.current_section = Some(section_name);
@@ -991,15 +1067,18 @@ impl RepoFile {
             if !state.pending_comments.is_empty()
                 || !state.section_header_comments.contains_key(sec_name)
             {
-                state
-                    .section_header_comments
-                    .insert(sec_name.clone(), std::mem::take(&mut state.pending_comments));
+                state.section_header_comments.insert(
+                    sec_name.clone(),
+                    std::mem::take(&mut state.pending_comments),
+                );
             }
             state
                 .sections
                 .insert(sec_name.clone(), std::mem::take(&mut state.current_entries));
         } else if !state.pending_comments.is_empty() {
-            state.preamble.extend(std::mem::take(&mut state.pending_comments));
+            state
+                .preamble
+                .extend(std::mem::take(&mut state.pending_comments));
         }
 
         build_repofile(state)
@@ -1042,9 +1121,7 @@ impl RepoFile {
     pub fn add(&mut self, repo: Repo) -> std::result::Result<(), crate::error::AddRepoError> {
         let id = repo.id.clone();
         if self.repos.contains_key(&id) {
-            return Err(crate::error::AddRepoError {
-                id: id.to_string(),
-            });
+            return Err(crate::error::AddRepoError { id: id.to_string() });
         }
         self.repos.insert(
             id,
@@ -1125,7 +1202,7 @@ impl RepoFile {
     }
 
     /// Merge another RepoFile into this one.
-    /// [main]: other's Some fields overwrite self's None fields.
+    /// `[main]`: other's Some fields overwrite self's None fields.
     /// repos: duplicate IDs are overwritten by other, non-duplicates are appended.
     pub fn merge(&mut self, other: RepoFile) {
         if let Some(other_main) = other.main {
@@ -1146,27 +1223,57 @@ impl RepoFile {
 
 fn merge_mainconfig(dest: &mut MainConfig, src: &MainConfig) {
     macro_rules! merge_opt {
-        ($field:ident) => { if src.$field.is_some() && dest.$field.is_none() { dest.$field = src.$field.clone(); } };
+        ($field:ident) => {
+            if src.$field.is_some() && dest.$field.is_none() {
+                dest.$field = src.$field.clone();
+            }
+        };
     }
-    merge_opt!(arch); merge_opt!(basearch); merge_opt!(releasever);
-    merge_opt!(cachedir); merge_opt!(persistdir); merge_opt!(logdir);
-    merge_opt!(config_file_path); merge_opt!(installroot);
-    merge_opt!(debuglevel); merge_opt!(logfilelevel);
-    merge_opt!(log_rotate); merge_opt!(log_size);
-    merge_opt!(installonly_limit); merge_opt!(errorlevel);
+    merge_opt!(arch);
+    merge_opt!(basearch);
+    merge_opt!(releasever);
+    merge_opt!(cachedir);
+    merge_opt!(persistdir);
+    merge_opt!(logdir);
+    merge_opt!(config_file_path);
+    merge_opt!(installroot);
+    merge_opt!(debuglevel);
+    merge_opt!(logfilelevel);
+    merge_opt!(log_rotate);
+    merge_opt!(log_size);
+    merge_opt!(installonly_limit);
+    merge_opt!(errorlevel);
     merge_opt!(metadata_timer_sync);
-    merge_opt!(allow_vendor_change); merge_opt!(assumeyes); merge_opt!(assumeno);
-    merge_opt!(autocheck_running_kernel); merge_opt!(best); merge_opt!(cacheonly);
-    merge_opt!(check_config_file_age); merge_opt!(clean_requirements_on_remove);
-    merge_opt!(debug_solver); merge_opt!(defaultyes); merge_opt!(diskspacecheck);
-    merge_opt!(exclude_from_weak_autodetect); merge_opt!(exit_on_lock);
-    merge_opt!(gpgkey_dns_verification); merge_opt!(ignorearch);
-    merge_opt!(install_weak_deps); merge_opt!(keepcache); merge_opt!(log_compress);
-    merge_opt!(module_obsoletes); merge_opt!(module_stream_switch);
-    merge_opt!(obsoletes); merge_opt!(plugins); merge_opt!(protect_running_kernel);
-    merge_opt!(strict); merge_opt!(upgrade_group_objects_upgrade); merge_opt!(zchunk);
-    merge_opt!(multilib_policy); merge_opt!(persistence);
-    merge_opt!(rpmverbosity); merge_opt!(module_platform_id);
+    merge_opt!(allow_vendor_change);
+    merge_opt!(assumeyes);
+    merge_opt!(assumeno);
+    merge_opt!(autocheck_running_kernel);
+    merge_opt!(best);
+    merge_opt!(cacheonly);
+    merge_opt!(check_config_file_age);
+    merge_opt!(clean_requirements_on_remove);
+    merge_opt!(debug_solver);
+    merge_opt!(defaultyes);
+    merge_opt!(diskspacecheck);
+    merge_opt!(exclude_from_weak_autodetect);
+    merge_opt!(exit_on_lock);
+    merge_opt!(gpgkey_dns_verification);
+    merge_opt!(ignorearch);
+    merge_opt!(install_weak_deps);
+    merge_opt!(keepcache);
+    merge_opt!(log_compress);
+    merge_opt!(module_obsoletes);
+    merge_opt!(module_stream_switch);
+    merge_opt!(obsoletes);
+    merge_opt!(plugins);
+    merge_opt!(protect_running_kernel);
+    merge_opt!(strict);
+    merge_opt!(upgrade_group_objects_upgrade);
+    merge_opt!(zchunk);
+    merge_opt!(multilib_policy);
+    merge_opt!(persistence);
+    merge_opt!(rpmverbosity);
+    merge_opt!(module_platform_id);
     for (k, v) in &src.extras {
         if !dest.extras.contains_key(k) {
             dest.extras.insert(k.clone(), v.clone());

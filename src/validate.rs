@@ -33,6 +33,12 @@ pub enum IssueLocation {
     Main,
 }
 
+impl Default for ValidationReport {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ValidationReport {
     pub fn new() -> Self {
         ValidationReport {
@@ -69,9 +75,7 @@ impl Repo {
             r.errors.push(issue);
         }
 
-        if !self.baseurl.is_empty()
-            && (self.mirrorlist.is_some() || self.metalink.is_some())
-        {
+        if !self.baseurl.is_empty() && (self.mirrorlist.is_some() || self.metalink.is_some()) {
             r.warnings.push(ValidationIssue {
                 level: IssueLevel::Warning,
                 location: IssueLocation::Repo(self.id.clone()),
