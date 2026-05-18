@@ -7,7 +7,7 @@ description = "Pure Rust library for parsing, managing, validating, diffing, and
 license = "MIT"
 repository = "https://github.com/franckcl1989/dnf-repofile"
 readme = "README.md"
-keywords = ["dnf", "yum", "rpm", "repository", "repo", "configuration", "parser"]
+keywords = ["dnf", "yum", "rpm", "repository", "parser"]
 categories = ["config", "parsing"]
 documentation = "https://docs.rs/dnf-repofile"
 
