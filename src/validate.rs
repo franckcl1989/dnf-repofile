@@ -2,12 +2,14 @@ use crate::mainconfig::MainConfig;
 use crate::repo::Repo;
 use crate::types::{DnfBool, RepoId};
 
+/// Report containing validation errors and warnings
 #[derive(Debug, Clone)]
 pub struct ValidationReport {
     pub errors: Vec<ValidationIssue>,
     pub warnings: Vec<ValidationIssue>,
 }
 
+/// A single validation finding with severity level and location
 #[derive(Debug, Clone)]
 pub struct ValidationIssue {
     pub level: IssueLevel,
@@ -16,12 +18,14 @@ pub struct ValidationIssue {
     pub message: String,
 }
 
+/// Severity level for a validation issue
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IssueLevel {
     Error,
     Warning,
 }
 
+/// Identifies where a validation issue was found
 #[derive(Debug, Clone)]
 pub enum IssueLocation {
     File(String),
@@ -37,16 +41,19 @@ impl ValidationReport {
         }
     }
 
+    #[must_use]
     pub fn is_ok(&self) -> bool {
         self.errors.is_empty()
     }
 
+    #[must_use]
     pub fn has_issues(&self) -> bool {
         !self.errors.is_empty() || !self.warnings.is_empty()
     }
 }
 
 impl Repo {
+    #[must_use]
     pub fn validate(&self) -> ValidationReport {
         let mut r = ValidationReport::new();
 
@@ -92,6 +99,7 @@ impl Repo {
 }
 
 impl MainConfig {
+    #[must_use]
     pub fn validate(&self) -> ValidationReport {
         ValidationReport::new()
     }

@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Manages a directory of `.repo` files on disk
 #[derive(Debug)]
 pub struct ReposDir {
     path: PathBuf,
@@ -140,6 +141,7 @@ impl ReposDir {
             .flat_map(|(name, rf)| rf.iter().map(move |(_, block)| (name.as_str(), &block.data)))
     }
 
+    #[must_use]
     pub fn validate(&self) -> ValidationReport {
         let mut report = ValidationReport::new();
         let mut seen: HashMap<&RepoId, &str> = HashMap::new();

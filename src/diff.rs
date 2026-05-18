@@ -4,6 +4,7 @@ use crate::repofile::RepoFile;
 use crate::types::RepoId;
 use indexmap::IndexMap;
 
+/// Result of comparing two entire `.repo` files
 #[derive(Debug, Clone)]
 pub struct FileDiff {
     pub main_changes: Option<ConfigDiff>,
@@ -14,6 +15,7 @@ pub struct FileDiff {
     pub has_changes: bool,
 }
 
+/// Per-repository field-level diff between two `Repo` values
 #[derive(Debug, Clone)]
 pub struct RepoDiff {
     pub changed: Vec<(String, String, String)>,
@@ -22,6 +24,7 @@ pub struct RepoDiff {
     pub has_changes: bool,
 }
 
+/// Field-level diff between two `MainConfig` values
 #[derive(Debug, Clone)]
 pub struct ConfigDiff {
     pub changed: Vec<(String, String, String)>,

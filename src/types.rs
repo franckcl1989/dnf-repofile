@@ -142,21 +142,25 @@ pub struct ErrorLevel(u8);
 
 // ===== Composite value types =====
 
+/// A storage size in bytes (e.g. bandwidth, minrate, log_size)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StorageSize(pub u64);
 
+/// How long metadata is considered valid before a refresh is required
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MetadataExpire {
     Duration(u64),
     Never,
 }
 
+/// Bandwidth throttle: absolute storage size or percentage of total
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Throttle {
     Absolute(StorageSize),
     Percent(u8),
 }
 
+/// Proxy configuration: unset (default), explicitly disabled, or a URL
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProxySetting {
     Unset,
@@ -166,6 +170,7 @@ pub enum ProxySetting {
 
 // ===== DNF Boolean =====
 
+/// DNF boolean value: True (1/yes/true/on) or False (0/no/false/off)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DnfBool {
     True,
@@ -181,6 +186,11 @@ impl DnfBool {
             _ => Err(crate::error::ParseBoolError { input: s.to_owned() }),
         }
     }
+
+    /// Convenience: enabled (True)
+    pub fn yes() -> Self { DnfBool::True }
+    /// Convenience: disabled (False)
+    pub fn no() -> Self { DnfBool::False }
 }
 
 impl std::fmt::Display for DnfBool {
@@ -206,27 +216,35 @@ impl From<DnfBool> for bool {
 
 // ===== Enums =====
 
+/// IP protocol version preference (IPv4 or IPv6)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IpResolve { V4, V6 }
 
+/// HTTP proxy authentication method
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProxyAuthMethod { Any, None_, Basic, Digest, Negotiate, Ntlm, DigestIe, NtlmWb }
 
+/// Repository metadata type (e.g. rpm-md)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RepoMetadataType { RpmMd }
 
+/// Multilib package installation policy
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MultilibPolicy { Best, All }
 
+/// SQLite database persistence mode for repository metadata
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Persistence { Auto, Transient, Persist }
 
+/// RPM transaction verbosity level
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RpmVerbosity { Critical, Emergency, Error, Warn, Info, Debug }
 
+/// RPM transaction flag controlling scripts, triggers, and other behaviors
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TsFlag { NoScripts, Test, NoTriggers, NoDocs, JustDb, NoContexts, NoCaps, NoCrypto, Deploops, NoPlugins }
 
+/// Describes how a repository advertises its metadata source
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UrlSource {
     BaseUrl(Vec<Url>),

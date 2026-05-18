@@ -89,6 +89,33 @@ pub struct RepoFile {
     pub repos: IndexMap<RepoId, SectionBlock<Repo>>,
 }
 
+impl std::fmt::Display for RepoFile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.render())
+    }
+}
+
+impl std::str::FromStr for RepoFile {
+    type Err = ParseError;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::parse(s)
+    }
+}
+
+impl From<RepoFile> for String {
+    fn from(rf: RepoFile) -> Self {
+        rf.render()
+    }
+}
+
+impl<'a> IntoIterator for &'a RepoFile {
+    type Item = (&'a RepoId, &'a SectionBlock<Repo>);
+    type IntoIter = indexmap::map::Iter<'a, RepoId, SectionBlock<Repo>>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.repos.iter()
+    }
+}
+
 // ============================================================================
 // Internal parse types
 // ============================================================================
@@ -979,6 +1006,7 @@ impl RepoFile {
     }
 
     /// Render the RepoFile back to INI text.
+    #[must_use]
     pub fn render(&self) -> String {
         let mut out = String::new();
         for line in &self.preamble {
@@ -1065,6 +1093,11 @@ impl RepoFile {
         self.repos.iter()
     }
 
+    /// Iterate over all `Repo` data (wrapping `SectionBlock`).
+    pub fn repos(&self) -> impl Iterator<Item = &Repo> {
+        self.repos.values().map(|block| &block.data)
+    }
+
     pub fn repo_ids(&self) -> impl Iterator<Item = &RepoId> {
         self.repos.keys()
     }
@@ -1144,14 +1177,6 @@ fn merge_mainconfig(dest: &mut MainConfig, src: &MainConfig) {
 impl Default for RepoFile {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl std::str::FromStr for RepoFile {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        RepoFile::parse(s)
     }
 }
 

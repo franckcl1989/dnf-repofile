@@ -2,6 +2,7 @@ use crate::repo::Repo;
 use crate::types::*;
 use url::Url;
 
+/// Builder-pattern API for constructing a `Repo` with a fluent interface
 #[derive(Debug, Clone)]
 pub struct RepoBuilder {
     repo: Repo,
@@ -20,6 +21,7 @@ impl RepoBuilder {
         }
     }
 
+    #[must_use]
     pub fn build(self) -> Repo {
         self.repo
     }
