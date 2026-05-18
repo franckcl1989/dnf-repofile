@@ -1,4 +1,5 @@
 use dnf_repofile::types::*;
+use url::Url;
 
 // ---- Identifiers ----
 
@@ -162,4 +163,172 @@ fn test_throttle_percent() {
     } else {
         panic!("expected Percent(50)");
     }
+}
+
+// ---- Remaining identifiers ----
+
+#[test]
+fn test_password_wrapper() {
+    let p = Password::new("secret");
+    assert_eq!(p.as_ref(), "secret");
+    // no sanitize — whitespace preserved
+    let p2 = Password::new("  secret  ");
+    assert_eq!(p2.as_ref(), "  secret  ");
+}
+
+#[test]
+fn test_proxy_username_trim() {
+    let u = ProxyUsername::new("  proxyuser  ");
+    assert_eq!(u.as_ref(), "proxyuser");
+}
+
+#[test]
+fn test_proxy_password_wrapper() {
+    let p = ProxyPassword::new("proxysecret");
+    assert_eq!(p.as_ref(), "proxysecret");
+    // no sanitize — whitespace preserved
+    let p2 = ProxyPassword::new("  psecret  ");
+    assert_eq!(p2.as_ref(), "  psecret  ");
+}
+
+#[test]
+fn test_user_agent_trim() {
+    let ua = UserAgent::new("  my-agent/1.0  ");
+    assert_eq!(ua.as_ref(), "my-agent/1.0");
+}
+
+#[test]
+fn test_module_platform_id_trim() {
+    let id = ModulePlatformId::new("  platform:1  ");
+    assert_eq!(id.as_ref(), "platform:1");
+}
+
+#[test]
+fn test_repo_name_trims_whitespace() {
+    let name = RepoName::try_new("  My Repo  ").unwrap();
+    assert_eq!(name.as_ref(), "My Repo");
+}
+
+// ---- Remaining numerics ----
+
+#[test]
+fn test_timeout_seconds_non_negative() {
+    assert!(TimeoutSeconds::try_new(0).is_ok());
+    assert_eq!(*TimeoutSeconds::try_new(30).unwrap(), 30);
+}
+
+#[test]
+fn test_timeout_seconds_default() {
+    assert_eq!(*TimeoutSeconds::default(), 30);
+}
+
+#[test]
+fn test_log_level_range() {
+    assert!(LogLevel::try_new(0).is_ok());
+    assert!(LogLevel::try_new(10).is_ok());
+    assert!(LogLevel::try_new(11).is_err());
+}
+
+#[test]
+fn test_log_level_default() {
+    assert_eq!(*LogLevel::default(), 9);
+}
+
+#[test]
+fn test_log_rotate_non_negative() {
+    assert!(LogRotate::try_new(0).is_ok());
+    assert_eq!(*LogRotate::try_new(4).unwrap(), 4);
+}
+
+#[test]
+fn test_log_rotate_default() {
+    assert_eq!(*LogRotate::default(), 4);
+}
+
+#[test]
+fn test_metadata_timer_sync_non_negative() {
+    assert!(MetadataTimerSync::try_new(0).is_ok());
+    assert_eq!(*MetadataTimerSync::try_new(10800).unwrap(), 10800);
+}
+
+#[test]
+fn test_metadata_timer_sync_default() {
+    assert_eq!(*MetadataTimerSync::default(), 10800);
+}
+
+#[test]
+fn test_error_level_range() {
+    assert!(ErrorLevel::try_new(0).is_ok());
+    assert!(ErrorLevel::try_new(10).is_ok());
+    assert!(ErrorLevel::try_new(11).is_err());
+}
+
+#[test]
+fn test_error_level_default() {
+    assert_eq!(*ErrorLevel::default(), 3);
+}
+
+// ---- Missing enum variants ----
+
+#[test]
+fn test_metadata_expire_duration() {
+    assert_eq!(MetadataExpire::Duration(3600), MetadataExpire::Duration(3600));
+}
+
+#[test]
+fn test_throttle_absolute() {
+    let t = Throttle::Absolute(StorageSize(1024));
+    assert_eq!(t, Throttle::Absolute(StorageSize(1024)));
+}
+
+#[test]
+fn test_proxy_setting_url() {
+    let url = Url::parse("http://proxy.example.com:8080").unwrap();
+    let setting = ProxySetting::Url(url);
+    assert!(matches!(setting, ProxySetting::Url(_)));
+}
+
+// ---- Remaining enum types ----
+
+#[test]
+fn test_ip_resolve_variants() {
+    assert_ne!(IpResolve::V4, IpResolve::V6);
+}
+
+#[test]
+fn test_proxy_auth_method_variants() {
+    assert_eq!(format!("{:?}", ProxyAuthMethod::Any), "Any");
+    assert_eq!(format!("{:?}", ProxyAuthMethod::None_), "None_");
+}
+
+#[test]
+fn test_repo_metadata_type() {
+    assert_eq!(format!("{:?}", RepoMetadataType::RpmMd), "RpmMd");
+}
+
+#[test]
+fn test_multilib_policy_variants() {
+    assert_ne!(MultilibPolicy::Best, MultilibPolicy::All);
+}
+
+#[test]
+fn test_persistence_variants() {
+    assert_ne!(Persistence::Auto, Persistence::Transient);
+    assert_ne!(Persistence::Auto, Persistence::Persist);
+}
+
+#[test]
+fn test_rpm_verbosity_variants() {
+    assert_ne!(RpmVerbosity::Critical, RpmVerbosity::Emergency);
+    assert_ne!(RpmVerbosity::Error, RpmVerbosity::Warn);
+    assert_ne!(RpmVerbosity::Info, RpmVerbosity::Debug);
+}
+
+#[test]
+fn test_ts_flag_variants() {
+    assert_ne!(TsFlag::NoScripts, TsFlag::Test);
+    assert_ne!(TsFlag::NoTriggers, TsFlag::NoDocs);
+    assert_ne!(TsFlag::JustDb, TsFlag::NoContexts);
+    assert_ne!(TsFlag::NoCaps, TsFlag::NoCrypto);
+    assert_ne!(TsFlag::Deploops, TsFlag::NoPlugins);
 }
