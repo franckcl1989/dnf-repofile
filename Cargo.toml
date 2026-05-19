@@ -2,7 +2,7 @@
 name = "dnf-repofile"
 version = "0.1.2"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.86"
 description = "Pure Rust library for parsing, managing, validating, diffing, and rendering DNF/YUM .repo configuration files"
 license = "MIT"
 repository = "https://github.com/franckcl1989/dnf-repofile"
