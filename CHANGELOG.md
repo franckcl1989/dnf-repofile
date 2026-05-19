@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.3] - 2026-05-19
+
+### Changed
+- MSRV bumped from 1.86 to 1.95 for ecosystem alignment and longer support horizon
+
 ## [0.1.2] - 2026-05-19
 
 ### Fixed
