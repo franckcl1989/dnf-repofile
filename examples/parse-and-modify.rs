@@ -14,12 +14,13 @@ gpgkey=https://download.example.com/pub/epel/RPM-GPG-KEY
     println!("Parsed {} repos:", rf.len());
     for (id, block) in &rf {
         let enabled = block.data.enabled == Some(DnfBool::True);
-        println!(
-            "  [{}] {} (enabled: {})",
-            id,
-            block.data.name.as_ref().unwrap(),
-            enabled
-        );
+        let name = block
+            .data
+            .name
+            .as_deref()
+            .map(|s| s.as_str())
+            .unwrap_or("(unnamed)");
+        println!("  [{}] {} (enabled: {})", id, name, enabled);
     }
 
     // Modify a repo

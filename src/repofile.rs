@@ -17,7 +17,7 @@
 //! - [`RawEntry`] — a single key-value pair with associated comments
 //! - [`RepoFile`] — the top-level document type
 
-use crate::error::ParseError;
+use crate::error::{Error, ParseError, Result};
 use crate::mainconfig::MainConfig;
 use crate::repo::Repo;
 use crate::types::*;
@@ -38,121 +38,6 @@ macro_rules! try_parse_nutype {
             .and_then(|n| <$typ>::try_new(n).ok())
     };
 }
-
-// ============================================================================
-// Known option keys
-// ============================================================================
-
-#[allow(dead_code)]
-const KNOWN_REPO_KEYS: &[&str] = &[
-    "name",
-    "baseurl",
-    "mirrorlist",
-    "metalink",
-    "gpgkey",
-    "enabled",
-    "priority",
-    "cost",
-    "module_hotfixes",
-    "type",
-    "mediaid",
-    "enabled_metadata",
-    "excludepkgs",
-    "includepkgs",
-    "gpgcheck",
-    "repo_gpgcheck",
-    "localpkg_gpgcheck",
-    "skip_if_unavailable",
-    "deltarpm",
-    "deltarpm_percentage",
-    "enablegroups",
-    "fastestmirror",
-    "countme",
-    "bandwidth",
-    "throttle",
-    "minrate",
-    "retries",
-    "timeout",
-    "max_parallel_downloads",
-    "metadata_expire",
-    "ip_resolve",
-    "sslverify",
-    "sslverifystatus",
-    "sslcacert",
-    "sslclientcert",
-    "sslclientkey",
-    "proxy",
-    "proxy_username",
-    "proxy_password",
-    "proxy_auth_method",
-    "proxy_sslverify",
-    "proxy_sslcacert",
-    "proxy_sslclientcert",
-    "proxy_sslclientkey",
-    "username",
-    "password",
-    "user_agent",
-];
-
-#[allow(dead_code)]
-const KNOWN_MAIN_KEYS: &[&str] = &[
-    "arch",
-    "basearch",
-    "releasever",
-    "cachedir",
-    "persistdir",
-    "logdir",
-    "config_file_path",
-    "installroot",
-    "reposdir",
-    "varsdir",
-    "pluginconfpath",
-    "pluginpath",
-    "debuglevel",
-    "logfilelevel",
-    "log_rotate",
-    "log_size",
-    "installonly_limit",
-    "errorlevel",
-    "metadata_timer_sync",
-    "allow_vendor_change",
-    "assumeno",
-    "assumeyes",
-    "autocheck_running_kernel",
-    "best",
-    "cacheonly",
-    "check_config_file_age",
-    "clean_requirements_on_remove",
-    "debug_solver",
-    "defaultyes",
-    "diskspacecheck",
-    "exclude_from_weak_autodetect",
-    "exit_on_lock",
-    "gpgkey_dns_verification",
-    "ignorearch",
-    "install_weak_deps",
-    "keepcache",
-    "log_compress",
-    "module_obsoletes",
-    "module_stream_switch",
-    "obsoletes",
-    "plugins",
-    "protect_running_kernel",
-    "strict",
-    "upgrade_group_objects_upgrade",
-    "zchunk",
-    "installonlypkgs",
-    "protected_packages",
-    "exclude_from_weak",
-    "group_package_types",
-    "optional_metadata_types",
-    "tsflags",
-    "usr_drift_protected_paths",
-    "multilib_policy",
-    "persistence",
-    "rpmverbosity",
-    "module_platform_id",
-];
 
 // ============================================================================
 // Core public types
@@ -339,9 +224,10 @@ fn parse_proxy(val: &str) -> ProxySetting {
     if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("_none_") {
         return ProxySetting::Disabled;
     }
-    Url::from_str(trimmed)
-        .map(ProxySetting::Url)
-        .unwrap_or(ProxySetting::Unset)
+    match Url::from_str(trimmed) {
+        Ok(url) => ProxySetting::Url(url),
+        Err(_) => ProxySetting::Raw(trimmed.to_owned()),
+    }
 }
 
 fn parse_multilib_policy(val: &str) -> Option<MultilibPolicy> {
@@ -403,7 +289,8 @@ fn parse_storage_size(val: &str) -> Option<StorageSize> {
         _ => (trimmed, 1),
     };
     let num: u64 = num_str.trim().parse().ok()?;
-    Some(StorageSize(num * multiplier))
+    let bytes = num.checked_mul(multiplier)?;
+    Some(StorageSize(bytes))
 }
 
 fn parse_metadata_expire(val: &str) -> Option<MetadataExpire> {
@@ -1268,7 +1155,7 @@ impl RepoFile {
     ///
     /// # Errors
     ///
-    /// Returns [`AddRepoError`](crate::error::AddRepoError) if a repo with the same
+    /// Returns [`Error::DuplicateRepo`](crate::Error::DuplicateRepo) if a repo with the same
     /// ID already exists.
     ///
     /// # Examples
@@ -1281,10 +1168,10 @@ impl RepoFile {
     /// rf.add(repo).unwrap();
     /// assert_eq!(rf.len(), 1);
     /// ```
-    pub fn add(&mut self, repo: Repo) -> std::result::Result<(), crate::error::AddRepoError> {
+    pub fn add(&mut self, repo: Repo) -> Result<()> {
         let id = repo.id.clone();
         if self.repos.contains_key(&id) {
-            return Err(crate::error::AddRepoError { id: id.to_string() });
+            return Err(Error::DuplicateRepo(id.to_string()));
         }
         self.repos.insert(
             id,
@@ -1556,6 +1443,11 @@ fn merge_mainconfig(dest: &mut MainConfig, src: &MainConfig) {
             }
         };
     }
+    macro_rules! merge_vec {
+        ($field:ident) => {
+            dest.$field.extend(src.$field.iter().cloned());
+        };
+    }
     merge_opt!(arch);
     merge_opt!(basearch);
     merge_opt!(releasever);
@@ -1601,6 +1493,17 @@ fn merge_mainconfig(dest: &mut MainConfig, src: &MainConfig) {
     merge_opt!(persistence);
     merge_opt!(rpmverbosity);
     merge_opt!(module_platform_id);
+    merge_vec!(reposdir);
+    merge_vec!(varsdir);
+    merge_vec!(pluginconfpath);
+    merge_vec!(pluginpath);
+    merge_vec!(installonlypkgs);
+    merge_vec!(protected_packages);
+    merge_vec!(exclude_from_weak);
+    merge_vec!(group_package_types);
+    merge_vec!(optional_metadata_types);
+    merge_vec!(tsflags);
+    merge_vec!(usr_drift_protected_paths);
     for (k, v) in &src.extras {
         if !dest.extras.contains_key(k) {
             dest.extras.insert(k.clone(), v.clone());
@@ -1625,7 +1528,7 @@ fn render_line(out: &mut String, line: &str) {
     }
 }
 
-fn render_section_entries<T: std::fmt::Debug>(out: &mut String, block: &SectionBlock<T>) {
+fn render_section_entries<T>(out: &mut String, block: &SectionBlock<T>) {
     for entry in &block.raw_entries {
         for c in &entry.leading_comments {
             render_line(out, c);

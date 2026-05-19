@@ -409,8 +409,8 @@ pub enum Throttle {
 
 /// Proxy configuration for a repository.
 ///
-/// Can be unset (use system default), explicitly disabled, or a specific
-/// proxy URL.
+/// Can be unset (use system default), explicitly disabled, a specific
+/// proxy URL, or a raw unparseable string.
 ///
 /// # Examples
 ///
@@ -420,6 +420,7 @@ pub enum Throttle {
 /// let disabled = ProxySetting::Disabled;
 /// let url_proxy = ProxySetting::Url("http://proxy:8080/".parse().unwrap());
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ProxySetting {
     /// Use the default proxy configuration (no explicit setting).
@@ -428,6 +429,9 @@ pub enum ProxySetting {
     Disabled,
     /// Use this specific proxy URL.
     Url(Url),
+    /// A proxy value that could not be parsed as a valid URL (preserved for
+    /// round-trip fidelity).
+    Raw(String),
 }
 
 // ===== DNF Boolean =====
@@ -503,14 +507,24 @@ impl DnfBool {
     /// assert!(DnfBool::parse("maybe").is_err());
     /// ```
     pub fn parse(s: &str) -> std::result::Result<Self, crate::error::ParseBoolError> {
-        let lower: String = s.chars().map(|c| c.to_ascii_lowercase()).collect();
-        match lower.as_str() {
-            "1" | "yes" | "true" | "on" => Ok(DnfBool::True),
-            "0" | "no" | "false" | "off" => Ok(DnfBool::False),
-            _ => Err(crate::error::ParseBoolError {
-                input: s.to_owned(),
-            }),
+        let trimmed = s.trim();
+        if trimmed.eq_ignore_ascii_case("1")
+            || trimmed.eq_ignore_ascii_case("yes")
+            || trimmed.eq_ignore_ascii_case("true")
+            || trimmed.eq_ignore_ascii_case("on")
+        {
+            return Ok(DnfBool::True);
         }
+        if trimmed.eq_ignore_ascii_case("0")
+            || trimmed.eq_ignore_ascii_case("no")
+            || trimmed.eq_ignore_ascii_case("false")
+            || trimmed.eq_ignore_ascii_case("off")
+        {
+            return Ok(DnfBool::False);
+        }
+        Err(crate::error::ParseBoolError {
+            input: s.to_owned(),
+        })
     }
 
     /// Convenience constructor for [`DnfBool::True`] (enabled).
@@ -565,6 +579,7 @@ impl From<DnfBool> for bool {
 /// let v4 = IpResolve::V4;
 /// let v6 = IpResolve::V6;
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IpResolve {
     /// Prefer IPv4 connections.
@@ -582,6 +597,7 @@ pub enum IpResolve {
 ///
 /// let method = ProxyAuthMethod::Basic;
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProxyAuthMethod {
     /// Any available authentication method.
@@ -611,6 +627,7 @@ pub enum ProxyAuthMethod {
 ///
 /// let rpmmd = RepoMetadataType::RpmMd;
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RepoMetadataType {
     /// RPM-MD metadata format (standard).
@@ -626,6 +643,7 @@ pub enum RepoMetadataType {
 ///
 /// let policy = MultilibPolicy::Best;
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MultilibPolicy {
     /// Install the best-matching architecture.
@@ -643,6 +661,7 @@ pub enum MultilibPolicy {
 ///
 /// let mode = Persistence::Auto;
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Persistence {
     /// Automatically determine persistence.
@@ -662,6 +681,7 @@ pub enum Persistence {
 ///
 /// let verbose = RpmVerbosity::Info;
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RpmVerbosity {
     /// Critical messages only.
@@ -687,6 +707,7 @@ pub enum RpmVerbosity {
 ///
 /// let flags = vec![TsFlag::NoScripts, TsFlag::NoDocs];
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TsFlag {
     /// Disable script execution.
@@ -728,6 +749,7 @@ pub enum TsFlag {
 ///     _ => unreachable!(),
 /// }
 /// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UrlSource {
     /// One or more direct base URLs for the repository.

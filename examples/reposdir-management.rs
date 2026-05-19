@@ -13,21 +13,19 @@ fn main() -> Result<()> {
         .priority(Priority::try_new(50).unwrap())
         .build();
 
-    rf.add(repo).unwrap();
+    rf.add(repo)?;
 
     // Render to string
     println!("{}", rf);
 
     // Diff
     let mut other = RepoFile::new();
-    other
-        .add(
-            RepoBuilder::new(RepoId::try_new("custom").unwrap())
-                .name(RepoName::try_new("Updated").unwrap())
-                .baseurl("https://updated.example.com/".parse().unwrap())
-                .build(),
-        )
-        .unwrap();
+    other.add(
+        RepoBuilder::new(RepoId::try_new("custom").unwrap())
+            .name(RepoName::try_new("Updated").unwrap())
+            .baseurl("https://updated.example.com/".parse().unwrap())
+            .build(),
+    )?;
 
     let diff = diff_files(&rf, &other);
     println!("Changes detected: {}", diff.has_changes);

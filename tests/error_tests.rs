@@ -11,16 +11,6 @@ fn test_parse_bool_error_display() {
     assert!(err.to_string().contains("maybe"));
 }
 
-// ---- AddRepoError ----
-
-#[test]
-fn test_add_repo_error_display() {
-    let err = AddRepoError {
-        id: "myrepo".into(),
-    };
-    assert!(err.to_string().contains("myrepo"));
-}
-
 // ---- ParseError variants ----
 
 #[test]

@@ -59,6 +59,7 @@ pub struct ValidationIssue {
 ///
 /// - [`Error`](IssueLevel::Error) — configuration is invalid and should not be used.
 /// - [`Warning`](IssueLevel::Warning) — advisory notice; configuration may still work.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IssueLevel {
     /// A hard error: the configuration is invalid.
@@ -68,6 +69,7 @@ pub enum IssueLevel {
 }
 
 /// Identifies where a validation issue was found.
+#[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum IssueLocation {
     /// The issue is in a specific `.repo` file on disk.

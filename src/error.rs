@@ -5,7 +5,6 @@
 //!
 //! - [`ParseError`] — INI parsing failures (malformed sections, missing `=`, etc.)
 //! - [`ParseBoolError`] — invalid boolean values like `"maybe"`
-//! - [`AddRepoError`] — duplicate repo ID on insert
 //! - [`ExpandError`] — variable substitution failures (unknown name, depth, syntax)
 //!
 //! The [`Result`] type alias is a convenience for `Result<T, Error>`.
@@ -128,14 +127,6 @@ pub enum ParseError {
     /// An I/O error occurred while reading the file.
     #[error("I/O error reading file: {0}")]
     Io(#[from] std::io::Error),
-}
-
-/// Error when adding a repo that already exists in a [`RepoFile`](crate::RepoFile).
-#[derive(Error, Debug)]
-#[error("repo with ID '{id}' already exists")]
-pub struct AddRepoError {
-    /// The duplicate repo ID.
-    pub id: String,
 }
 
 /// Error when expanding DNF variables fails.
