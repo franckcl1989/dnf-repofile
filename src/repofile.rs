@@ -1155,7 +1155,7 @@ impl RepoFile {
     ///
     /// # Errors
     ///
-    /// Returns [`Error::DuplicateRepo`](crate::Error::DuplicateRepo) if a repo with the same
+    /// Returns [`Error::DuplicateRepo`] if a repo with the same
     /// ID already exists.
     ///
     /// # Examples
